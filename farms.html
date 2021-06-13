@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spurdo Finance</title>
+
+    <style>
+        html{height:100%;}
+        body{height:100%;width:100%;margin:0px;}
+        .input {resize:none;outline:none;box-sizing:border-box;border-style:solid;border-width:thin;border-top-left-radius:8px;border-bottom-left-radius:8px;border-right:none;font-family:'Comic Sans MS';font-size:18px;}
+        #setMax {background-color:white;width:75px;height:100%;box-sizing:border-box;border-style:solid;border-width:thin;border-top-right-radius:8px;border-bottom-right-radius:8px;border-left:none;font-family:'Comic Sans MS';font-size:18px;}
+        #setMax:hover {background-color:floralwhite;}
+        #setMax:active {font-size:17px;}
+
+        .buttonContainer .button {margin:auto;font-family:'Comic Sans MS';font-size:18px;width:110px;height:35px;border-radius:8px;border-style:solid;border-width:thin;box-shadow: 0 2px #999;}
+        .buttonContainer .button:active {transform:translateY(2px);box-shadow:none;}
+
+        #dashboard {margin-top:25px;padding-left:10px;padding-right:10px;width:420px;height:400px;border-style:solid;border-width:thin;border-radius:8px;padding-top:25px;}
+        #dashboard p {font-family:"Comic Sans MS"; font-size:18px;}
+        #dropDown {outline:none;border-top-left-radius:8px;border-bottom-left-radius:8px;border-right-style:none;min-width:50px;}
+    </style>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.0.umd.min.js" type="application/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script>
+
+        var accounts;
+        var provider;
+        var farmAddress = '0x6Bb3D578dCCf49bA4D47Be3eFC854197E50aEc7b';
+        var farmHelperAddress = '0x7682Bf7653127E3B08d669241b871090373470e6';
+        var tokenAddress = '0xa60998526180eaa4F1579053f8b2Fce80dD57e66';
+        var LpAddress = '0x33eb1A74DE5CAD742073294BAdD0296C0BaB0724';
+
+        var ERC20Abi = [
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Approval",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			}
+		],
+		"name": "allowance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "remaining",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "approve",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "decimals",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "name",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "symbol",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalSupply",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transferFrom",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
+        var farmAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "stakedTokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "rewardsTokenAddress",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "stakeHolder",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Stake",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "stakeHolder",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Unstake",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "claim",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_totalStaked",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "txFee",
+				"type": "uint256"
+			}
+		],
+		"name": "distributeRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "rewardsOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "rewardsToken",
+		"outputs": [
+			{
+				"internalType": "contract ERC20",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "stake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "stakeOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "stakeOnBehalfOf",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "stakedToken",
+		"outputs": [
+			{
+				"internalType": "contract ERC20",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalRewards",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "unstake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
+        var farmHelperAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_router",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_pair",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_token",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_owner",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_farm",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Received",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "bnbAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "stakeWithBnb",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "stakeWithToken",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "transferLp",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"stateMutability": "payable",
+		"type": "receive"
+	},
+	{
+		"inputs": [],
+		"name": "getLpBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+        window.onload = async () => {
+
+            if (typeof window.ethereum !== 'undefined') {
+                var chainId = await window.ethereum.request({method: 'eth_chainId'});
+                // console.log(parseInt(chainId));
+                // console.log(parseInt(chainId) === 1337)
+
+                window.ethereum.on('chainChanged', () => window.location.reload());
+
+                if (parseInt(chainId) === 97 || parseInt(chainId) === 1337) {
+
+                    window.ethereum.on('accountsChanged', (res) => {
+                        accounts = res;
+                        console.log(res);
+                        if (accounts.length > 0) {
+                            var addressLabel = accounts[0].substring(0, 4) + "..." + accounts[0].substring(accounts[0].length - 4, accounts[0].length);
+                            window.parent.document.getElementById('connect').innerHTML = addressLabel;
+                        } else {
+                            window.parent.document.getElementById('connect').innerHTML = 'Connect';
+                        }
+                    });
+                
+                    window.ethereum.request({method: 'eth_accounts'}).then((res) => {
+                        accounts = res;
+                        if (accounts.length > 0) {
+                            var addressLabel = accounts[0].substring(0, 4) + "..." + accounts[0].substring(accounts[0].length - 4, accounts[0].length);
+                            window.parent.document.getElementById('connect').innerHTML = addressLabel;
+                        }
+
+                        updateInfo();
+                        var farm = new ethers.Contract(farmAddress, farmAbi, provider);
+                        var token = new ethers.Contract(tokenAddress, ERC20Abi, provider);
+                        farm.on("Stake", ()=>{updateInfo()});
+                        farm.on("Unstake", ()=>{updateInfo()});
+                        token.on("Transfer", ()=>{updateInfo()});
+
+
+                    });
+
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    
+                }
+            }
+        }
+
+        async function unlockWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                    var chainId = await window.ethereum.request({method: 'eth_chainId'});
+                    if (parseInt(chainId) === 97 || parseInt(chainId) === 1337) {
+                        window.ethereum.request({method: 'eth_requestAccounts'}).then((res) => {
+                            accounts = res;
+                            var addressLabel = accounts[0].substring(0, 4) + "..." + accounts[0].substring(accounts[0].length - 4, accounts[0].length);
+                            window.parent.document.getElementById('connect').innerHTML = addressLabel;
+                            alert("Connection has been established...");
+                        }, (err) => {
+                            alert(err.code);
+                        });
+                    } else {
+                        alert("Please switch your network to Binance Smart Chain Testnet");
+                    }
+            } else {
+                return alert("Wallet not installed!");
+            }
+        }
+
+        function updateInfo() {
+            var farm = new ethers.Contract(farmAddress, farmAbi, provider);
+            farm.totalRewards().then((res)=>{
+                $("#claimedRewards").text(parseFloat(ethers.utils.formatEther(res)).toFixed(2));
+            });
+
+            farm.stakeOf(accounts[0]).then((res)=>{
+                var stake = ethers.utils.formatEther(res);
+                $("#userStake").text(parseFloat(stake).toFixed(2));
+                if (stake > 0) {
+                    $("#unstake").removeAttr("disabled");
+                }
+            });
+
+            farm.rewardsOf(accounts[0]).then((res)=>{
+                var reward = ethers.utils.formatEther(res);
+                $("#userRewards").text(parseFloat(reward).toFixed(2));
+                if (reward > 0) {
+                    $("#claim").removeAttr("disabled");
+                }
+            });
+        }
+
+        function select() {
+            var val = $("#dropDown option:selected").val();
+            if (val === 'BNB') {
+                $("#approve").prop('disabled', true);
+            } else {
+                $("#approve").removeAttr('disabled');
+            }
+        }
+
+        function setMaxDeposit() {
+            var val = $("#dropDown option:selected").val();
+            if (val === 'BNB') {
+                window.ethereum.request({method: 'eth_getBalance', params: [accounts[0]]}).then((res)=>{
+                    console.log(ethers.utils.formatEther(res));
+                    $("#amountToDeposit").val(ethers.utils.formatEther(res));
+                });
+            } else {
+                var a;
+                if (val === 'BENIS') {a = tokenAddress;} 
+                else if (val === 'LP') {a = LpAddress}
+
+                var tokenContract = new ethers.Contract(a, ERC20Abi, provider);
+                tokenContract.balanceOf(accounts[0]).then((res)=>{
+                    console.log(ethers.utils.formatEther(res));
+                    $("#amountToDeposit").val(ethers.utils.formatEther(res));
+                });
+            }
+        }
+
+        function setMaxWithdraw() {
+            var amount;
+            new ethers.Contract(farmAddress, farmAbi, provider).stakeOf(accounts[0]).then((res)=>{
+                $("#amountToWithdraw").val(ethers.utils.formatEther(res));
+            });
+        }
+
+        function approve(amount) {
+            var val = $("#dropDown option:selected").val();
+            var a;
+            var spender;
+            if (val === 'BENIS') {a = tokenAddress;spender = farmHelperAddress;}
+            else if (val === 'LP') {a = LpAddress;spender = farmAddress;}
+
+            var tokenContract = new ethers.Contract(a, ERC20Abi, provider.getSigner());
+            tokenContract.approve(spender, amount);
+        }
+
+        function stakeDefault(amount) {
+            new ethers.Contract(LpAddress, ERC20Abi, provider).allowance(accounts[0], farmAddress).then((res)=>{
+                if (ethers.utils.formatEther(res) >= $("#amountToDeposit").val()) {
+                    new ethers.Contract(farmAddress, farmAbi, provider.getSigner()).stake(ethers.utils.parseEther(amount));
+                } else {
+                    alert("User approved " + ethers.utils.formatEther(res) + " but tried to stake " + $("#amountToDeposit").val());
+                }
+            });
+        }
+
+        function stakeWithBeans(amount) {
+            var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
+            var amount = ethers.utils.parseEther(amount);
+            var overrides = {value:amount};
+            helper.stakeWithBnb(amount, overrides);
+        }
+
+        function stakeWithTokens(amount) {
+            var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
+            var amount = ethers.utils.parseEther(amount);
+            helper.stakeWithToken(amount);
+        }
+
+        function stake() {
+            var val = $("#dropDown option:selected").val();
+            var amount = $("#amountToDeposit").val();
+            if (!isNaN(amount) && amount !== "") {
+                if (val === "BNB") {
+                stakeWithBeans(amount);
+                } else if (val === "BENIS") {
+                    stakeWithTokens(amount);
+                } else {
+                    stakeDefault(amount);
+                }
+            }
+        }
+
+        function withdraw(amount) {
+            if (!isNaN(amount) && amount !== "") {
+                var farm = new ethers.Contract(farmAddress, farmAbi, provider.getSigner());
+                farm.unstake(ethers.utils.parseEther(amount));
+            }
+        }
+
+        function claim() {
+            var farm = new ethers.Contract(farmAddress, farmAbi, provider.getSigner());
+            farm.claim();
+        }
+    </script>
+</head>
+<body>
+    <div style="height:100%;padding-top:50px;display:flex;background-color:rgb(246, 228, 156);flex-direction:column;">
+
+        <div style="display:flex;justify-content:center;">
+            <div style="width:430px;">
+                <label for="amountToDeposit" style="font-family:'Comic Sans MS';font-size:18px;">Deposit LP: </label>
+            </div>
+        </div>
+
+        <div style="min-height:45px;display:flex;justify-content:center;">
+                <select id="dropDown" onchange="select()">
+                    <option value="BNB">BNB</option>
+                    <option value="BENIS">BENIS</option>
+                    <option value="LP">BENIS LP</option>
+                </select>
+                <input class="input" id="amountToDeposit" style="border-top-left-radius:0px;border-bottom-left-radius:0px;border-left-style:none;"></input>
+                <button id="setMax" onclick="setMaxDeposit()">MAX</button>
+        </div>
+
+        <div class="buttonContainer" style="display:flex;justify-content:center;margin-top:25px;">
+            <div style="width:375px;display:flex;justify-content:center;">
+                <button class="button" id="approve" onclick="approve(ethers.utils.parseEther($('#amountToDeposit').val()))" disabled>Approve</button>
+                <button class="button" id ="stake" onclick="stake()">Stake</button>
+            </div>
+        </div>
+        
+        <div style="display:flex;justify-content:center;">
+            <div class="buttonContainer" id="dashboard">
+                <h1 style="font-family:'Comic Sans MS';margin-top:0px;margin-bottom:0px;">Dashboard</h1><hr style="border-style:solid;border-bottom:none;">
+                <p>Total rewards distributed: <br><span id="claimedRewards">0</span></p>
+                <p>Your staked amount: <br><span id="userStake">0</span></p>
+                <div style="display:flex;">
+                    <div style="height:35px;display:flex;flex:1;">
+                        <input class="input" id="amountToWithdraw" style="width:200px;"></input>
+                        <button id="setMax" onclick="setMaxWithdraw()">MAX</button>
+                    </div>
+
+                    <div>
+                        <button class="button" id="unstake" onclick="withdraw($('#amountToWithdraw').val())" disabled>Unstake</button>
+                    </div>
+                </div>
+
+                <div style="display:flex;margin-top:25px;">
+                    <div style="flex:1;">
+                        <p>Your pending reward: <br><span id="userRewards">0</span></p>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;justify-content:center;">
+                        <button class="button" id="claim" onclick="claim()" disabled>Claim</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+</html>
