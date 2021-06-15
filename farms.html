@@ -7,7 +7,7 @@
     <title>Spurdo Finance</title>
 
     <style>
-        html{height:100%;}
+        html{height:100%;overflow:scroll;}
         body{height:100%;width:100%;margin:0px;}
         .input {resize:none;outline:none;box-sizing:border-box;border-style:solid;border-width:thin;border-top-left-radius:8px;border-bottom-left-radius:8px;border-right:none;font-family:'Comic Sans MS';font-size:18px;}
         #setMax {background-color:white;width:75px;height:100%;box-sizing:border-box;border-style:solid;border-width:thin;border-top-right-radius:8px;border-bottom-right-radius:8px;border-left:none;font-family:'Comic Sans MS';font-size:18px;}
@@ -652,6 +652,8 @@
                 $("#userStake").text(parseFloat(stake).toFixed(2));
                 if (stake > 0) {
                     $("#unstake").removeAttr("disabled");
+                } else {
+                    $("#unstake").prop('disabled', true);
                 }
             });
 
@@ -660,6 +662,8 @@
                 $("#userRewards").text(parseFloat(reward).toFixed(2));
                 if (reward > 0) {
                     $("#claim").removeAttr("disabled");
+                } else {
+                    $("#claim").prop('disabled', true);
                 }
             });
         }
@@ -712,26 +716,45 @@
         }
 
         function stakeDefault(amount) {
-            new ethers.Contract(LpAddress, ERC20Abi, provider).allowance(accounts[0], farmAddress).then((res)=>{
-                if (ethers.utils.formatEther(res) >= $("#amountToDeposit").val()) {
-                    new ethers.Contract(farmAddress, farmAbi, provider.getSigner()).stake(ethers.utils.parseEther(amount));
-                } else {
-                    alert("User approved " + ethers.utils.formatEther(res) + " but tried to stake " + $("#amountToDeposit").val());
-                }
-            });
+			var LpContract = new ethers.Contract(LpAddress, ERC20Abi, provider)
+			LpContract.allowance(accounts[0], farmAddress).then((res)=>{
+				var allowance = ethers.utils.formatEther(res);
+				var isAllowed = parseFloat(allowance) >= parseFloat(amount);
+				if (isAllowed) {
+					var farm = new ethers.Contract(farmAddress, farmAbi, provider.getSigner());
+					farm.stake(ethers.utils.parseEther(amount));
+				} else {
+					alert("User approved " + allowance + "LP but tried to stake " + amount);
+				}
+			});
         }
 
         function stakeWithBeans(amount) {
-            var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
-            var amount = ethers.utils.parseEther(amount);
-            var overrides = {value:amount};
-            helper.stakeWithBnb(amount, overrides);
+			window.ethereum.request({method: "eth_getBalance", params: [accounts[0]]}).then((res)=>{
+				var balance = ethers.utils.formatEther(res);
+				var hasEnough = parseFloat(balance) >= parseFloat(amount);
+				if (hasEnough) {
+					var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
+					var overrides = {value:ethers.utils.parseEther(amount)};
+					helper.stakeWithBnb(ethers.utils.parseEther(amount), overrides);
+				} else {
+					alert("Git yo broke ass outta here nigga")
+				}
+			});
         }
 
         function stakeWithTokens(amount) {
-            var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
-            var amount = ethers.utils.parseEther(amount);
-            helper.stakeWithToken(amount);
+			var tokenContract = new ethers.Contract(tokenAddress, ERC20Abi, provider);
+			tokenContract.allowance(accounts[0], farmHelperAddress).then((res)=>{
+				var allowance = ethers.utils.formatEther(res);
+				var isAllowed = parseFloat(allowance) >= parseFloat(amount);
+				if (isAllowed) {
+					var helper = new ethers.Contract(farmHelperAddress, farmHelperAbi, provider.getSigner());
+					helper.stakeWithToken(ethers.utils.parseEther(amount));
+				} else {
+					alert("User approved " + allowance + "BENIS but tried to stake " + amount);
+				}
+			});
         }
 
         function stake() {
